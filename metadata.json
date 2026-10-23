@@ -1,0 +1,6 @@
+{
+  "name": "RepRise",
+  "description": "Personal daily push-up streak tracker with progressive targets, midnight countdowns, completion history calendar, and local reminders.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
