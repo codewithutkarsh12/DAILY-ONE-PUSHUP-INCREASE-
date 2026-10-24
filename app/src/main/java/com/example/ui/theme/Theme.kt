@@ -9,33 +9,53 @@ import androidx.compose.ui.graphics.Color
 import com.example.data.preferences.AppThemeMode
 
 private val DarkColorScheme = darkColorScheme(
-    primary = EmberAccent,
-    onPrimary = Color.White,
-    secondary = EmeraldSuccess,
-    onSecondary = Color.Black,
-    tertiary = AmberWarning,
+    primary = AthleticLime,
+    onPrimary = Color(0xFF0B0D10),
+    primaryContainer = Color(0xFF283514),
+    onPrimaryContainer = AthleticLime,
+    secondary = CyanSecondary,
+    onSecondary = Color(0xFF071E29),
+    secondaryContainer = Color(0xFF142E3D),
+    onSecondaryContainer = CyanSecondary,
+    tertiary = EmeraldSuccess,
+    onTertiary = Color(0xFF062615),
     background = CharcoalBackground,
     onBackground = TextPrimaryDark,
     surface = CharcoalSurface,
     onSurface = TextPrimaryDark,
-    surfaceVariant = CharcoalSurfaceVariant,
+    surfaceVariant = CharcoalSurfaceElevated,
     onSurfaceVariant = TextSecondaryDark,
-    error = CrimsonMissed
+    outline = CardBorderDark,
+    outlineVariant = CharcoalSurfaceVariant,
+    error = CrimsonMissed,
+    onError = Color(0xFF290609),
+    errorContainer = Color(0xFF3B1418),
+    onErrorContainer = CrimsonMissed
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = EmberAccentLight,
+    primary = AthleticLimeLight,
     onPrimary = Color.White,
-    secondary = EmeraldSuccess,
+    primaryContainer = Color(0xFFDDF7A6),
+    onPrimaryContainer = Color(0xFF1D3600),
+    secondary = CyanSecondaryLight,
     onSecondary = Color.White,
-    tertiary = AmberWarning,
+    secondaryContainer = Color(0xFFD4F1FF),
+    onSecondaryContainer = Color(0xFF002B3D),
+    tertiary = EmeraldSuccessLight,
+    onTertiary = Color.White,
     background = LightBackground,
     onBackground = TextPrimaryLight,
     surface = LightSurface,
     onSurface = TextPrimaryLight,
-    surfaceVariant = LightSurfaceVariant,
+    surfaceVariant = LightSurfaceElevated,
     onSurfaceVariant = TextSecondaryLight,
-    error = CrimsonMissed
+    outline = CardBorderLight,
+    outlineVariant = LightSurfaceVariant,
+    error = CrimsonMissedLight,
+    onError = Color.White,
+    errorContainer = Color(0xFFFFE5E7),
+    onErrorContainer = CrimsonMissedLight
 )
 
 @Composable

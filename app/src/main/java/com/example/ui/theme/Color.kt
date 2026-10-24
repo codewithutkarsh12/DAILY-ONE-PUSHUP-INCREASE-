@@ -2,21 +2,47 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Near-black background, subtle dark cards, white primary text, muted secondary text, restrained orange accent
-val CharcoalBackground = Color(0xFF0A0D12)
-val CharcoalSurface = Color(0xFF14181F)
-val CharcoalSurfaceVariant = Color(0xFF1E242E)
-val EmberAccent = Color(0xFFFF6B35)
-val EmeraldSuccess = Color(0xFF2ECC71)
-val AmberWarning = Color(0xFFF39C12)
-val CrimsonMissed = Color(0xFFE74C3C)
-val TextPrimaryDark = Color(0xFFF8FAFC)
-val TextSecondaryDark = Color(0xFF94A3B8)
+// ============================================================================
+// RepRise Premium Athletic Dark Palette (Primary Default)
+// ============================================================================
+val CharcoalBackground = Color(0xFF0B0D10)
+val CharcoalSurface = Color(0xFF15191F)
+val CharcoalSurfaceElevated = Color(0xFF1D232B)
+val CharcoalSurfaceVariant = Color(0xFF222933)
+val CardBorderDark = Color(0xFF28303D)
 
-// Clean Light Theme Palette
-val LightBackground = Color(0xFFF8FAFC)
+// Energetic Athletic Lime (Primary Accent) & Cool Cyan (Secondary Accent)
+val AthleticLime = Color(0xFFC6F36B)
+val CyanSecondary = Color(0xFF75D7FF)
+
+// Activity Semantic Colors
+val EmeraldSuccess = Color(0xFF72E0A4)
+val CrimsonMissed = Color(0xFFFF737A)
+val AmberWarning = Color(0xFFF5B942)
+val PendingNeutral = Color(0xFF9BA4B0)
+
+// Keep EmberAccent mapped to AthleticLime for seamless backwards compatibility across components
+val EmberAccent = AthleticLime
+
+// High-Contrast Typography Colors (Dark)
+val TextPrimaryDark = Color(0xFFF5F7FA)
+val TextSecondaryDark = Color(0xFF9BA4B0)
+val TextMutedDark = Color(0xFF687382)
+
+// ============================================================================
+// RepRise Clean Athletic Light Palette (Optional Light Mode)
+// ============================================================================
+val LightBackground = Color(0xFFF4F6F9)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFEEF2F6)
-val EmberAccentLight = Color(0xFFE8551E)
-val TextPrimaryLight = Color(0xFF0F172A)
-val TextSecondaryLight = Color(0xFF64748B)
+val LightSurfaceElevated = Color(0xFFEEF2F6)
+val LightSurfaceVariant = Color(0xFFE2E8F0)
+val CardBorderLight = Color(0xFFD5DCE6)
+
+val AthleticLimeLight = Color(0xFF4A7C00)
+val CyanSecondaryLight = Color(0xFF0077A8)
+val EmeraldSuccessLight = Color(0xFF159E5E)
+val CrimsonMissedLight = Color(0xFFD93842)
+val EmberAccentLight = AthleticLimeLight
+
+val TextPrimaryLight = Color(0xFF0B0D10)
+val TextSecondaryLight = Color(0xFF525D6B)

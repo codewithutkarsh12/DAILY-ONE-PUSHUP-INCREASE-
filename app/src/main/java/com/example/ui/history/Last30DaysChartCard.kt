@@ -3,11 +3,13 @@ package com.example.ui.history
 import android.annotation.SuppressLint
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -56,7 +59,7 @@ import com.example.domain.ChartDayPoint
 import com.example.domain.DayChallengeStatus
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CrimsonMissed
-import com.example.ui.theme.EmberAccent
+import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.EmeraldSuccess
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -74,6 +77,16 @@ fun Last30DaysPerformanceChartCard(
     if (chartPoints.isEmpty()) return
 
     val view = LocalView.current
+
+    var chartRevealed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        chartRevealed = true
+    }
+    val barGrowthFraction by animateFloatAsState(
+        targetValue = if (chartRevealed) 1f else 0f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "chartBarGrowthFraction"
+    )
 
     var selectedBarIndex by rememberSaveable(chartPoints.size) {
         mutableIntStateOf(chartPoints.lastIndex.coerceAtLeast(0))
@@ -103,15 +116,16 @@ fun Last30DaysPerformanceChartCard(
 
     val midChartValue = maxChartValue / 2
 
-    val gridLineColor = MaterialTheme.colorScheme.surfaceVariant
-    val emptyTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.28f)
-    val highlightColor = MaterialTheme.colorScheme.onSurface
+    val gridLineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)
+    val emptyTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+    val highlightColor = MaterialTheme.colorScheme.primary
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("last_30_days_chart_card"),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.65f)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
@@ -122,13 +136,22 @@ fun Last30DaysPerformanceChartCard(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.BarChart,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
                 Column {
                     Text(
                         text = "Last 30 Days Performance",
@@ -136,7 +159,7 @@ fun Last30DaysPerformanceChartCard(
                     )
                     Text(
                         text = "Tap or slide across bars to inspect daily repetitions vs. target",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -146,6 +169,7 @@ fun Last30DaysPerformanceChartCard(
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("chart_selected_tooltip")
@@ -189,16 +213,16 @@ fun Last30DaysPerformanceChartCard(
                             )
                             Text(
                                 text = statusText,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = statusColor,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = "Actual",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = "ACTUAL",
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
@@ -214,15 +238,15 @@ fun Last30DaysPerformanceChartCard(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = "Target",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = "TARGET",
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "${point.targetReps} reps",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = EmberAccent
+                                    color = CyanSecondary
                                 )
                             }
                         }
@@ -241,23 +265,23 @@ fun Last30DaysPerformanceChartCard(
                 Column(
                     modifier = Modifier
                         .height(150.dp)
-                        .padding(end = 6.dp),
+                        .padding(end = 8.dp),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
                         text = "$maxChartValue",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "$midChartValue",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "0",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -308,7 +332,7 @@ fun Last30DaysPerformanceChartCard(
                     if (count == 0) return@Canvas
 
                     // Horizontal reference grid lines (top, mid, bottom)
-                    val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+                    val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f), 0f)
                     listOf(0f, canvasHeight * 0.5f, canvasHeight).forEach { y ->
                         drawLine(
                             color = gridLineColor,
@@ -324,7 +348,7 @@ fun Last30DaysPerformanceChartCard(
 
                     // Smoothly animated selection column highlight
                     drawRoundRect(
-                        color = highlightColor.copy(alpha = 0.09f),
+                        color = highlightColor.copy(alpha = 0.12f),
                         topLeft = Offset(animatedSelectedIndex * slotWidth, 0f),
                         size = Size(slotWidth, canvasHeight),
                         cornerRadius = CornerRadius(4.dp.toPx())
@@ -337,7 +361,7 @@ fun Last30DaysPerformanceChartCard(
 
                         if (point.actualReps > 0) {
                             val ratio = (point.actualReps.toFloat() / maxChartValue.toFloat()).coerceIn(0f, 1f)
-                            val barHeight = (ratio * canvasHeight).coerceAtLeast(4.dp.toPx())
+                            val barHeight = (ratio * canvasHeight * barGrowthFraction).coerceAtLeast(4.dp.toPx())
                             val barTop = canvasHeight - barHeight
                             val barColor = when {
                                 point.status == DayChallengeStatus.COMPLETED -> EmeraldSuccess
@@ -353,7 +377,7 @@ fun Last30DaysPerformanceChartCard(
                             // Zero-activity baseline tick (red if missed after start, muted otherwise)
                             val tickHeight = 3.dp.toPx()
                             val tickColor = if (point.status == DayChallengeStatus.MISSED) {
-                                CrimsonMissed.copy(alpha = 0.65f)
+                                CrimsonMissed.copy(alpha = 0.70f)
                             } else {
                                 emptyTickColor
                             }
@@ -380,7 +404,7 @@ fun Last30DaysPerformanceChartCard(
                     }
                     drawPath(
                         path = targetPath,
-                        color = EmberAccent,
+                        color = CyanSecondary,
                         style = Stroke(
                             width = 2.dp.toPx(),
                             pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
@@ -399,17 +423,17 @@ fun Last30DaysPerformanceChartCard(
             ) {
                 Text(
                     text = chartPoints.first().date.format(dateFmt),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = chartPoints[chartPoints.size / 2].date.format(dateFmt),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = chartPoints.last().date.format(dateFmt),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -420,7 +444,7 @@ fun Last30DaysPerformanceChartCard(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 ChartLegendDot(color = EmeraldSuccess, label = "Actual (Done)")
-                ChartLegendDot(color = EmberAccent, label = "Daily Target")
+                ChartLegendDot(color = CyanSecondary, label = "Daily Target")
                 ChartLegendDot(color = CrimsonMissed, label = "Missed (0)")
             }
         }
@@ -435,13 +459,13 @@ internal fun ChartLegendDot(color: Color, label: String) {
     ) {
         Box(
             modifier = Modifier
-                .size(10.dp)
+                .size(9.dp)
                 .clip(CircleShape)
                 .background(color)
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

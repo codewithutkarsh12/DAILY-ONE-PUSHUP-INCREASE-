@@ -112,7 +112,7 @@ fun CoachScreen(
 
     val context = LocalContext.current
     var inputText by rememberSaveable { mutableStateOf("") }
-    var selectedEnergyLevel by rememberSaveable { mutableStateOf("Balanced / Normal") }
+    var selectedEnergyLevel by rememberSaveable { mutableStateOf("Balanced") }
     val listState = rememberLazyListState()
 
     // Auto-scroll to latest response on new message or while streaming
@@ -308,7 +308,7 @@ fun CoachScreen(
                             )
 
                             // Energy selection chips
-                            val energyOptions = listOf("⚡ High Energy", "⚖️ Balanced", "🔋 Fatigued")
+                            val energyOptions = listOf("High Energy", "Balanced", "Fatigued")
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -319,8 +319,8 @@ fun CoachScreen(
                                         onClick = { selectedEnergyLevel = level },
                                         label = { Text(level) },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = EmberAccent.copy(alpha = 0.2f),
-                                            selectedLabelColor = EmberAccent
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                            selectedLabelColor = MaterialTheme.colorScheme.primary
                                         ),
                                         modifier = Modifier.testTag("energy_chip_${level.filter { it.isLetter() }}")
                                     )

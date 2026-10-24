@@ -17,6 +17,7 @@ import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,10 +27,17 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -44,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -143,75 +152,112 @@ class MainActivity : ComponentActivity() {
             }
 
             RepRiseTheme(themeMode = uiState.settings.themeMode) {
+                val navItemColors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 Scaffold(
                     contentWindowInsets = WindowInsets.safeDrawing,
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
-                        NavigationBar {
-                            NavigationBarItem(
-                                selected = selectedTab == BottomNavTab.HOME,
-                                onClick = {
-                                    if (selectedTab != BottomNavTab.HOME) {
-                                        selectedTab = BottomNavTab.HOME
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Default.Home,
-                                        contentDescription = stringResource(R.string.nav_home)
-                                    )
-                                },
-                                label = { Text(stringResource(R.string.nav_home)) },
-                                modifier = Modifier.testTag("nav_home")
+                        Column {
+                            HorizontalDivider(
+                                thickness = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)
                             )
-                            NavigationBarItem(
-                                selected = selectedTab == BottomNavTab.COACH,
-                                onClick = {
-                                    if (selectedTab != BottomNavTab.COACH) {
-                                        selectedTab = BottomNavTab.COACH
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Default.AutoAwesome,
-                                        contentDescription = stringResource(R.string.nav_coach)
-                                    )
-                                },
-                                label = { Text(stringResource(R.string.nav_coach)) },
-                                modifier = Modifier.testTag("nav_coach")
-                            )
-                            NavigationBarItem(
-                                selected = selectedTab == BottomNavTab.HISTORY,
-                                onClick = {
-                                    if (selectedTab != BottomNavTab.HISTORY) {
-                                        selectedTab = BottomNavTab.HISTORY
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Default.CalendarMonth,
-                                        contentDescription = stringResource(R.string.nav_history)
-                                    )
-                                },
-                                label = { Text(stringResource(R.string.nav_history)) },
-                                modifier = Modifier.testTag("nav_history")
-                            )
-                            NavigationBarItem(
-                                selected = selectedTab == BottomNavTab.SETTINGS,
-                                onClick = {
-                                    if (selectedTab != BottomNavTab.SETTINGS) {
-                                        selectedTab = BottomNavTab.SETTINGS
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Default.Settings,
-                                        contentDescription = stringResource(R.string.nav_settings)
-                                    )
-                                },
-                                label = { Text(stringResource(R.string.nav_settings)) },
-                                modifier = Modifier.testTag("nav_settings")
-                            )
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 0.dp
+                            ) {
+                                NavigationBarItem(
+                                    selected = selectedTab == BottomNavTab.HOME,
+                                    onClick = {
+                                        if (selectedTab != BottomNavTab.HOME) {
+                                            selectedTab = BottomNavTab.HOME
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selectedTab == BottomNavTab.HOME) {
+                                                Icons.Filled.Home
+                                            } else {
+                                                Icons.Outlined.Home
+                                            },
+                                            contentDescription = stringResource(R.string.nav_home)
+                                        )
+                                    },
+                                    label = { Text(stringResource(R.string.nav_home)) },
+                                    colors = navItemColors,
+                                    modifier = Modifier.testTag("nav_home")
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == BottomNavTab.COACH,
+                                    onClick = {
+                                        if (selectedTab != BottomNavTab.COACH) {
+                                            selectedTab = BottomNavTab.COACH
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selectedTab == BottomNavTab.COACH) {
+                                                Icons.Filled.AutoAwesome
+                                            } else {
+                                                Icons.Outlined.AutoAwesome
+                                            },
+                                            contentDescription = stringResource(R.string.nav_coach)
+                                        )
+                                    },
+                                    label = { Text(stringResource(R.string.nav_coach)) },
+                                    colors = navItemColors,
+                                    modifier = Modifier.testTag("nav_coach")
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == BottomNavTab.HISTORY,
+                                    onClick = {
+                                        if (selectedTab != BottomNavTab.HISTORY) {
+                                            selectedTab = BottomNavTab.HISTORY
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selectedTab == BottomNavTab.HISTORY) {
+                                                Icons.Filled.CalendarMonth
+                                            } else {
+                                                Icons.Outlined.CalendarMonth
+                                            },
+                                            contentDescription = stringResource(R.string.nav_history)
+                                        )
+                                    },
+                                    label = { Text(stringResource(R.string.nav_history)) },
+                                    colors = navItemColors,
+                                    modifier = Modifier.testTag("nav_history")
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == BottomNavTab.SETTINGS,
+                                    onClick = {
+                                        if (selectedTab != BottomNavTab.SETTINGS) {
+                                            selectedTab = BottomNavTab.SETTINGS
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selectedTab == BottomNavTab.SETTINGS) {
+                                                Icons.Filled.Settings
+                                            } else {
+                                                Icons.Outlined.Settings
+                                            },
+                                            contentDescription = stringResource(R.string.nav_settings)
+                                        )
+                                    },
+                                    label = { Text(stringResource(R.string.nav_settings)) },
+                                    colors = navItemColors,
+                                    modifier = Modifier.testTag("nav_settings")
+                                )
+                            }
                         }
                     }
                 ) { innerPadding ->
@@ -223,12 +269,14 @@ class MainActivity : ComponentActivity() {
                                 .padding(innerPadding),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     } else {
                         Crossfade(
                             targetState = selectedTab,
-                            animationSpec = tween(durationMillis = 180),
+                            animationSpec = tween(durationMillis = 200),
                             label = "bottomNavCrossfade",
                             modifier = Modifier.padding(innerPadding)
                         ) { tab ->
@@ -247,7 +295,8 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onUndoToday = { viewModel.undoTodayCompletion() },
                                     onOpenNotificationSettings = { openAppNotificationSettings() },
-                                    onOpenCoach = { selectedTab = BottomNavTab.COACH }
+                                    onOpenCoach = { selectedTab = BottomNavTab.COACH },
+                                    onOpenSettings = { selectedTab = BottomNavTab.SETTINGS }
                                 )
 
                                 BottomNavTab.COACH -> CoachScreen(

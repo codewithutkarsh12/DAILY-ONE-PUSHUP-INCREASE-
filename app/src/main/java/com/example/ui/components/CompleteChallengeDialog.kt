@@ -1,14 +1,25 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,9 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.R
@@ -51,18 +65,67 @@ fun CompleteChallengeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(18.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
-            Text(
-                text = stringResource(R.string.confirm_dialog_title),
-                style = MaterialTheme.typography.titleLarge
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FitnessCenter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.confirm_dialog_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "REQUIRED TARGET",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$targetReps REPS",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 Text(
-                    text = "Today's target is $targetReps push-ups. Confirm completion below or enter the exact repetitions performed.",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "Confirm completion below or enter the exact repetitions performed in this session.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
                 OutlinedTextField(
                     value = actualRepsText,
                     onValueChange = { input ->
@@ -72,6 +135,7 @@ fun CompleteChallengeDialog(
                     label = { Text("Actual reps performed (optional)") },
                     placeholder = { Text("Default: $targetReps") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = validationError != null,
                     supportingText = {
@@ -82,7 +146,7 @@ fun CompleteChallengeDialog(
                             )
                         } else if (isPartialCount) {
                             Text(
-                                text = "$parsedInput reps is below today's target ($targetReps). You can save it as partial progress, or reach $targetReps to complete the challenge.",
+                                text = "$parsedInput reps is below today's target ($targetReps). Save as partial progress now, or complete all $targetReps reps.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
@@ -97,6 +161,7 @@ fun CompleteChallengeDialog(
                 if (isPartialCount) {
                     OutlinedButton(
                         onClick = { onSavePartialProgress(parsedInput) },
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("save_partial_reps_button")
@@ -129,9 +194,13 @@ fun CompleteChallengeDialog(
                         }
                     }
                 },
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("confirm_done_button")
             ) {
-                Text(stringResource(R.string.confirm_dialog_confirm))
+                Text(
+                    text = stringResource(R.string.confirm_dialog_confirm),
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {
