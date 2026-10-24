@@ -185,7 +185,7 @@ Robolectric| Android-related testing
 
 🏗️ Architecture
 
-RepRise follows a separation-of-concerns approach.
+RepRise follows a separation-of-concerns architecture, keeping the UI, business logic, local storage, and Android notification functionality separate.
 
 RepRise
 │
@@ -193,10 +193,9 @@ RepRise
 │   ├── Home
 │   ├── History
 │   ├── Settings
-│   └── Components
-│
-├── ViewModel
-│   └── UI State Management
+│   ├── Components
+│   └── ViewModel
+│       └── UI State Management
 │
 ├── Domain
 │   ├── Target Calculator
@@ -204,18 +203,16 @@ RepRise
 │   └── Challenge Manager
 │
 ├── Data
+│   ├── Repository
 │   ├── Room Database
-│   ├── DataStore
-│   └── Repository
+│   └── DataStore
 │
 └── Notifications
     ├── Reminder Scheduler
     ├── Notification Receiver
     └── Boot Receiver
 
-The architecture separates challenge calculations, local persistence, UI state, and Android notification functionality.
-
----
+This architecture separates challenge calculations, local persistence, UI state management, and Android notification functionality.
 
 📱 Screens
 
