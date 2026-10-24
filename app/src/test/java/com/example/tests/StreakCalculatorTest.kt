@@ -290,23 +290,167 @@ class StreakCalculatorTest {
         assertEquals(10, pointToday.targetReps)
     }
 
+    // Milestone Tests:
+    // 1. Longest streak below 7 days
     @Test
-    fun `milestones unlock progressively based on longest streak value`() {
-        val noneUnlocked = StreakCalculator.evaluateMilestones(longestStreak = 5)
-        assertEquals(4, noneUnlocked.size)
-        assertTrue(noneUnlocked.none { it.isUnlocked })
+    fun `milestone logic - longest streak below 7 days leaves all badges locked`() {
+        val milestones = StreakCalculator.evaluateMilestones(longestStreak = 6)
+        assertEquals(3, milestones.size)
+        assertTrue(milestones.none { it.isUnlocked })
+        val sevenDay = milestones.first { it.thresholdDays == 7 }
+        assertFalse(sevenDay.isUnlocked)
+        assertEquals("6/7d", sevenDay.progressText)
+    }
 
-        val sevenUnlocked = StreakCalculator.evaluateMilestones(longestStreak = 7)
-        assertTrue(sevenUnlocked.first { it.thresholdDays == 7 }.isUnlocked)
-        assertFalse(sevenUnlocked.first { it.thresholdDays == 14 }.isUnlocked)
+    // 2. Longest streak exactly 7 days
+    @Test
+    fun `milestone logic - longest streak exactly 7 days unlocks only 7-day badge`() {
+        val milestones = StreakCalculator.evaluateMilestones(longestStreak = 7)
+        assertEquals(3, milestones.size)
+        val sevenDay = milestones.first { it.thresholdDays == 7 }
+        val thirtyDay = milestones.first { it.thresholdDays == 30 }
+        val hundredDay = milestones.first { it.thresholdDays == 100 }
 
-        val thirtyUnlocked = StreakCalculator.evaluateMilestones(longestStreak = 35)
-        assertTrue(thirtyUnlocked.first { it.thresholdDays == 7 }.isUnlocked)
-        assertTrue(thirtyUnlocked.first { it.thresholdDays == 14 }.isUnlocked)
-        assertTrue(thirtyUnlocked.first { it.thresholdDays == 30 }.isUnlocked)
-        assertFalse(thirtyUnlocked.first { it.thresholdDays == 100 }.isUnlocked)
+        assertTrue(sevenDay.isUnlocked)
+        assertEquals("Unlocked", sevenDay.progressText)
+        assertEquals(1.0f, sevenDay.progress, 0.001f)
 
-        val allUnlocked = StreakCalculator.evaluateMilestones(longestStreak = 100)
-        assertTrue(allUnlocked.all { it.isUnlocked })
+        assertFalse(thirtyDay.isUnlocked)
+        assertEquals("7/30d", thirtyDay.progressText)
+
+        assertFalse(hundredDay.isUnlocked)
+        assertEquals("7/100d", hundredDay.progressText)
+    }
+
+    // 3. Longest streak exactly 30 days
+    @Test
+    fun `milestone logic - longest streak exactly 30 days unlocks 7-day and 30-day badges`() {
+        val milestones = StreakCalculator.evaluateMilestones(longestStreak = 30)
+        assertEquals(3, milestones.size)
+        val sevenDay = milestones.first { it.thresholdDays == 7 }
+        val thirtyDay = milestones.first { it.thresholdDays == 30 }
+        val hundredDay = milestones.first { it.thresholdDays == 100 }
+
+        assertTrue(sevenDay.isUnlocked)
+        assertTrue(thirtyDay.isUnlocked)
+        assertEquals("Unlocked", thirtyDay.progressText)
+        assertEquals(1.0f, thirtyDay.progress, 0.001f)
+
+        assertFalse(hundredDay.isUnlocked)
+        assertEquals("30/100d", hundredDay.progressText)
+    }
+
+    // 4. Longest streak exactly 100 days
+    @Test
+    fun `milestone logic - longest streak exactly 100 days unlocks all badges`() {
+        val milestones = StreakCalculator.evaluateMilestones(longestStreak = 100)
+        assertEquals(3, milestones.size)
+        assertTrue(milestones.all { it.isUnlocked })
+        val hundredDay = milestones.first { it.thresholdDays == 100 }
+        assertTrue(hundredDay.isUnlocked)
+        assertEquals("Unlocked", hundredDay.progressText)
+        assertEquals(1.0f, hundredDay.progress, 0.001f)
+    }
+
+    // 5. Longest streak greater than 100 days
+    @Test
+    fun `milestone logic - longest streak greater than 100 days preserves all unlocked badges and caps progress`() {
+        val milestones = StreakCalculator.evaluateMilestones(longestStreak = 142)
+        assertEquals(3, milestones.size)
+        assertTrue(milestones.all { it.isUnlocked })
+        milestones.forEach {
+            assertEquals(1.0f, it.progress, 0.001f)
+            assertEquals("Unlocked", it.progressText)
+        }
+    }
+
+    // 6. Current streak broken while longest streak remains preserved
+    @Test
+    fun `milestone logic - current streak broken preserves earned achievements from longest streak`() {
+        // Build a 7-day streak from 2026-10-01 to 2026-10-07
+        val history = (1..7).map { day ->
+            PushUpDayEntity(
+                id = day.toLong(),
+                localDate = "2026-10-0$day",
+                targetReps = 10 + day - 1,
+                isCompleted = true,
+                actualReps = 10 + day - 1
+            )
+        }
+
+        // On 2026-10-09 (2026-10-08 was missed), active streak is 0, but longest streak is 7
+        val statsOnMissed = StreakCalculator.calculateStats(
+            today = LocalDate.of(2026, 10, 9),
+            history = history
+        )
+        assertEquals(0, statsOnMissed.activeStreak)
+        assertEquals(7, statsOnMissed.longestStreak)
+
+        // 7-day badge must remain unlocked!
+        val sevenDayMilestone = statsOnMissed.milestones.first { it.thresholdDays == 7 }
+        assertTrue(sevenDayMilestone.isUnlocked)
+        assertEquals("Unlocked", sevenDayMilestone.progressText)
+    }
+
+    // 7. App restart after unlocking a milestone
+    @Test
+    fun `milestone logic - app restart preserves unlocked milestones from persisted history`() = runTest {
+        val dao = FakePushUpDayDao()
+        val startDate = LocalDate.of(2026, 1, 1)
+
+        // Simulate completing 30 consecutive days
+        for (i in 0 until 30) {
+            val date = startDate.plusDays(i.toLong())
+            dao.markDayCompletedTransactional(
+                localDate = date.toString(),
+                targetReps = 10 + i,
+                actualReps = 10 + i,
+                completedAtMillis = 1000L * (i + 1)
+            )
+        }
+
+        // Simulate app restart: re-read all days from DB and evaluate stats
+        val reloadedHistory = dao.getAllDaysAsc()
+        val statsAfterRestart = StreakCalculator.calculateStats(
+            today = startDate.plusDays(29),
+            history = reloadedHistory
+        )
+
+        assertEquals(30, statsAfterRestart.activeStreak)
+        assertEquals(30, statsAfterRestart.longestStreak)
+        assertTrue(statsAfterRestart.milestones.first { it.thresholdDays == 7 }.isUnlocked)
+        assertTrue(statsAfterRestart.milestones.first { it.thresholdDays == 30 }.isUnlocked)
+        assertFalse(statsAfterRestart.milestones.first { it.thresholdDays == 100 }.isUnlocked)
+    }
+
+    // 8. Historical achievements remain unlocked after a missed day
+    @Test
+    fun `milestone logic - historical achievements remain unlocked after multiple missed days`() = runTest {
+        val dao = FakePushUpDayDao()
+        val startDate = LocalDate.of(2026, 3, 1)
+
+        // User achieves 100-day streak
+        for (i in 0 until 100) {
+            val date = startDate.plusDays(i.toLong())
+            dao.markDayCompletedTransactional(
+                localDate = date.toString(),
+                targetReps = 10 + i,
+                actualReps = 10 + i,
+                completedAtMillis = 1000L * (i + 1)
+            )
+        }
+
+        // User takes a 2-week break and reopens the app
+        val reopenedDate = startDate.plusDays(114) // 14 missed days
+        val reloadedHistory = dao.getAllDaysAsc()
+        val statsAfterBreak = StreakCalculator.calculateStats(
+            today = reopenedDate,
+            history = reloadedHistory
+        )
+
+        assertEquals(0, statsAfterBreak.activeStreak)
+        assertEquals(100, statsAfterBreak.longestStreak)
+        // All achievements remain permanently unlocked
+        assertTrue(statsAfterBreak.milestones.all { it.isUnlocked })
     }
 }

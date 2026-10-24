@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -46,8 +47,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ai.AiCoachViewModel
+import com.example.ai.configureAppCheck
 import com.example.notifications.ReminderScheduler
 import com.example.ui.RepRiseViewModel
+import com.example.ui.coach.CoachScreen
 import com.example.ui.history.HistoryScreen
 import com.example.ui.home.HomeScreen
 import com.example.ui.settings.SettingsScreen
@@ -56,6 +60,7 @@ import java.time.LocalDate
 
 private enum class BottomNavTab {
     HOME,
+    COACH,
     HISTORY,
     SETTINGS
 }
@@ -72,12 +77,17 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val coachViewModel: AiCoachViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Configure Firebase App Check with launch Intent before UI or Firebase operations
+        configureAppCheck(this, intent)
         enableEdgeToEdge()
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val coachUiState by coachViewModel.uiState.collectAsStateWithLifecycle()
             var selectedTab by rememberSaveable { mutableStateOf(BottomNavTab.HOME) }
             var hasNotifPermission by remember {
                 mutableStateOf(ReminderScheduler.hasNotificationPermission(this))
@@ -155,6 +165,22 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.testTag("nav_home")
                             )
                             NavigationBarItem(
+                                selected = selectedTab == BottomNavTab.COACH,
+                                onClick = {
+                                    if (selectedTab != BottomNavTab.COACH) {
+                                        selectedTab = BottomNavTab.COACH
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = stringResource(R.string.nav_coach)
+                                    )
+                                },
+                                label = { Text(stringResource(R.string.nav_coach)) },
+                                modifier = Modifier.testTag("nav_coach")
+                            )
+                            NavigationBarItem(
                                 selected = selectedTab == BottomNavTab.HISTORY,
                                 onClick = {
                                     if (selectedTab != BottomNavTab.HISTORY) {
@@ -220,7 +246,23 @@ class MainActivity : ComponentActivity() {
                                         viewModel.recordPartialProgress(partialReps)
                                     },
                                     onUndoToday = { viewModel.undoTodayCompletion() },
-                                    onOpenNotificationSettings = { openAppNotificationSettings() }
+                                    onOpenNotificationSettings = { openAppNotificationSettings() },
+                                    onOpenCoach = { selectedTab = BottomNavTab.COACH }
+                                )
+
+                                BottomNavTab.COACH -> CoachScreen(
+                                    snapshot = snapshot,
+                                    uiState = coachUiState,
+                                    onSendPrompt = { prompt, ctx ->
+                                        coachViewModel.sendPrompt(prompt, ctx)
+                                    },
+                                    onGeneratePacing = { target, streak, fatigue ->
+                                        coachViewModel.generatePacingPlan(target, streak, fatigue)
+                                    },
+                                    onRetry = { coachViewModel.retryLastPrompt() },
+                                    onDismissError = { coachViewModel.dismissError() },
+                                    onClearChat = { coachViewModel.clearConversation() },
+                                    onNavigateHome = { selectedTab = BottomNavTab.HOME }
                                 )
 
                                 BottomNavTab.HISTORY -> HistoryScreen(

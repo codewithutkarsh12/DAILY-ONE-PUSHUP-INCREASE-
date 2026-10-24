@@ -2,6 +2,7 @@
     <string name="app_name">RepRise</string>
     <string name="app_subtitle">Push-up Streak Tracker</string>
     <string name="nav_home">Home</string>
+    <string name="nav_coach">Coach</string>
     <string name="nav_history">History</string>
     <string name="nav_settings">Settings</string>
     <string name="today_target_header">TODAY\'S PUSH-UP TARGET</string>

@@ -9,7 +9,9 @@ data class StreakMilestone(
     val thresholdDays: Int,
     val badgeLabel: String,
     val title: String,
-    val isUnlocked: Boolean
+    val isUnlocked: Boolean,
+    val progress: Float = 0f,
+    val progressText: String = ""
 )
 
 data class StreakStats(
@@ -27,20 +29,24 @@ data class StreakStats(
 @SuppressLint("NewApi")
 object StreakCalculator {
 
-    private val MILESTONE_DEFINITIONS = listOf(
-        7 to "7-Day Spark",
-        14 to "14-Day Forge",
-        30 to "30-Day Monthly",
-        100 to "100-Day Centurion"
+    val MILESTONE_DEFINITIONS = listOf(
+        7 to "7-Day Streak",
+        30 to "30-Day Streak",
+        100 to "100-Day Streak"
     )
 
     fun evaluateMilestones(longestStreak: Int): List<StreakMilestone> {
         return MILESTONE_DEFINITIONS.map { (days, title) ->
+            val isUnlocked = longestStreak >= days
+            val progress = (longestStreak.toFloat() / days.toFloat()).coerceIn(0f, 1f)
+            val progressText = if (isUnlocked) "Unlocked" else "$longestStreak/${days}d"
             StreakMilestone(
                 thresholdDays = days,
                 badgeLabel = "${days}d",
                 title = title,
-                isUnlocked = longestStreak >= days
+                isUnlocked = isUnlocked,
+                progress = progress,
+                progressText = progressText
             )
         }
     }

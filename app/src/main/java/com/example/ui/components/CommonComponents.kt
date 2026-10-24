@@ -18,28 +18,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +65,9 @@ import com.example.R
 import com.example.domain.StreakCalculator
 import com.example.domain.StreakMilestone
 import com.example.ui.theme.EmberAccent
+import com.example.ui.theme.EmeraldSuccess
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * Compact Dashboard card displayed at the top of the Home screen:
@@ -205,6 +215,7 @@ fun CompactDashboardCard(
                     milestones.forEach { milestone ->
                         MilestoneBadgeItem(
                             milestone = milestone,
+                            longestStreak = longestStreak,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -217,26 +228,28 @@ fun CompactDashboardCard(
 @Composable
 private fun MilestoneBadgeItem(
     milestone: StreakMilestone,
+    longestStreak: Int,
     modifier: Modifier = Modifier
 ) {
+    var showDetailDialog by rememberSaveable { mutableStateOf(false) }
+
     val icon = when (milestone.thresholdDays) {
         7 -> Icons.Default.LocalFireDepartment
-        14 -> Icons.Default.Bolt
         30 -> Icons.Default.WorkspacePremium
         else -> Icons.Default.MilitaryTech
     }
 
     val badgeScale by animateFloatAsState(
-        targetValue = if (milestone.isUnlocked) 1.0f else 0.97f,
+        targetValue = if (milestone.isUnlocked) 1.0f else 0.98f,
         animationSpec = tween(durationMillis = 220),
         label = "milestoneBadgeScale"
     )
 
     val containerBg by animateColorAsState(
         targetValue = if (milestone.isUnlocked) {
-            EmberAccent.copy(alpha = 0.14f)
+            EmberAccent.copy(alpha = 0.16f)
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
         },
         animationSpec = tween(durationMillis = 200),
         label = "milestoneBadgeBg"
@@ -244,9 +257,9 @@ private fun MilestoneBadgeItem(
 
     val borderColor by animateColorAsState(
         targetValue = if (milestone.isUnlocked) {
-            EmberAccent.copy(alpha = 0.7f)
+            EmberAccent.copy(alpha = 0.75f)
         } else {
-            Color.Transparent
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
         },
         animationSpec = tween(durationMillis = 200),
         label = "milestoneBadgeBorder"
@@ -256,7 +269,7 @@ private fun MilestoneBadgeItem(
         targetValue = if (milestone.isUnlocked) {
             EmberAccent
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
         },
         animationSpec = tween(durationMillis = 200),
         label = "milestoneIconTint"
@@ -266,17 +279,18 @@ private fun MilestoneBadgeItem(
         targetValue = if (milestone.isUnlocked) {
             MaterialTheme.colorScheme.onSurface
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
         },
         animationSpec = tween(durationMillis = 200),
         label = "milestoneTextColor"
     )
 
-    val statusDesc = if (milestone.isUnlocked) "Unlocked" else "Locked"
+    val statusDesc = if (milestone.isUnlocked) "Unlocked" else "Locked (${milestone.progressText})"
 
     Row(
         modifier = modifier
             .testTag("milestone_badge_${milestone.thresholdDays}")
+            .heightIn(min = 48.dp)
             .graphicsLayer {
                 scaleX = badgeScale
                 scaleY = badgeScale
@@ -287,37 +301,132 @@ private fun MilestoneBadgeItem(
             .clip(RoundedCornerShape(12.dp))
             .background(containerBg)
             .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(12.dp))
+            .clickable { showDetailDialog = true }
             .padding(vertical = 8.dp, horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(22.dp)
+                .size(24.dp)
                 .clip(CircleShape)
                 .background(
                     if (milestone.isUnlocked) {
-                        EmberAccent.copy(alpha = 0.22f)
+                        EmberAccent.copy(alpha = 0.25f)
                     } else {
-                        MaterialTheme.colorScheme.surfaceVariant
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
                     }
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
+                imageVector = if (milestone.isUnlocked) icon else Icons.Default.Lock,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(13.dp)
             )
         }
         Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = milestone.badgeLabel,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (milestone.isUnlocked) FontWeight.Bold else FontWeight.Medium,
-            color = textColor,
-            maxLines = 1
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = milestone.badgeLabel,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (milestone.isUnlocked) FontWeight.Bold else FontWeight.SemiBold,
+                color = textColor,
+                maxLines = 1
+            )
+            Text(
+                text = if (milestone.isUnlocked) "Unlocked" else milestone.progressText,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (milestone.isUnlocked) EmberAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+
+    if (showDetailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDetailDialog = false },
+            icon = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (milestone.isUnlocked) EmberAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = milestone.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Achieve a consecutive push-up streak of at least ${milestone.thresholdDays} days.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (milestone.isUnlocked) "Achievement Unlocked!" else "Progress",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (milestone.isUnlocked) EmeraldSuccess else MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${longestStreak.coerceAtMost(milestone.thresholdDays)} / ${milestone.thresholdDays} days",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { milestone.progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = if (milestone.isUnlocked) EmeraldSuccess else EmberAccent,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    if (milestone.isUnlocked) {
+                        Text(
+                            text = "Permanent achievement earned with your personal best streak of $longestStreak days.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = EmeraldSuccess
+                        )
+                    } else {
+                        val needed = milestone.thresholdDays - longestStreak
+                        Text(
+                            text = "$needed more consecutive completed ${if (needed == 1) "day" else "days"} needed to unlock.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showDetailDialog = false },
+                    modifier = Modifier.testTag("dismiss_milestone_dialog_button")
+                ) {
+                    Text("Got it")
+                }
+            }
         )
     }
 }

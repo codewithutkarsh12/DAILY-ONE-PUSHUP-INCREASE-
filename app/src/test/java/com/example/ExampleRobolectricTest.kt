@@ -175,4 +175,55 @@ class ExampleRobolectricTest {
         store.resetSettingsToDefaults()
         db.close()
     }
+
+    @Test
+    fun `Robolectric - milestones unlocked in Room database survive broken streak and app reload`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        val store = UserSettingsStore(context)
+        val repo = PushUpRepository(db.pushUpDayDao(), store)
+
+        val startDate = LocalDate.of(2026, 5, 1)
+
+        // Complete 7 consecutive days to unlock 7-Day milestone
+        for (i in 0 until 7) {
+            val date = startDate.plusDays(i.toLong())
+            repo.completeChallengeForDate(
+                date = date,
+                targetReps = 10 + i,
+                actualReps = 10 + i,
+                completedAtMillis = 1000L * (i + 1)
+            )
+        }
+
+        var snapshot = ChallengeManager.evaluateDashboard(
+            now = startDate.plusDays(6).atTime(21, 0),
+            history = repo.getAllDaysSnapshot(),
+            settings = store.settingsFlow.first()
+        )
+        assertEquals(7, snapshot.activeStreak)
+        assertEquals(7, snapshot.longestStreak)
+        val stats7 = com.example.domain.StreakCalculator.calculateStats(startDate.plusDays(6), repo.getAllDaysSnapshot())
+        assertTrue(stats7.milestones.first { it.thresholdDays == 7 }.isUnlocked)
+
+        // Now simulate a missed day (Day 8: 2026-05-08). App is opened on Day 9 (2026-05-09)
+        val day9 = startDate.plusDays(8)
+        snapshot = ChallengeManager.evaluateDashboard(
+            now = day9.atTime(10, 0),
+            history = repo.getAllDaysSnapshot(),
+            settings = store.settingsFlow.first()
+        )
+        // Active streak resets to 0
+        assertEquals(0, snapshot.activeStreak)
+        // Longest streak remains 7
+        assertEquals(7, snapshot.longestStreak)
+
+        // 7-day milestone remains permanently unlocked
+        val statsDay9 = com.example.domain.StreakCalculator.calculateStats(day9, repo.getAllDaysSnapshot())
+        assertTrue(statsDay9.milestones.first { it.thresholdDays == 7 }.isUnlocked)
+
+        db.close()
+    }
 }

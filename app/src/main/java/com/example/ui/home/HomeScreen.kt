@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Schedule
@@ -69,6 +70,7 @@ import com.example.ui.components.CompleteChallengeDialog
 import com.example.ui.components.NotificationPermissionBanner
 import com.example.ui.components.SafetyAndSelfReportNote
 import com.example.ui.theme.AmberWarning
+import com.example.ui.theme.EmberAccent
 import com.example.ui.theme.EmeraldSuccess
 import java.time.Instant
 import java.time.ZoneId
@@ -87,6 +89,7 @@ fun HomeScreen(
     onSavePartialProgress: (partialReps: Int) -> Unit,
     onUndoToday: () -> Unit,
     onOpenNotificationSettings: () -> Unit,
+    onOpenCoach: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -464,6 +467,27 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.undo_completion_cta))
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = onOpenCoach,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("open_ai_coach_button"),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "AI Coach",
+                            tint = EmberAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Ask Gemini Coach for Pacing & Form",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
 
                     Text(
