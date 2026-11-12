@@ -972,3 +972,130 @@ fun NotificationPermissionBanner(
         }
     }
 }
+
+/**
+ * Interactive 3-step Onboarding & Athlete Progression Guide dialog.
+ */
+@Composable
+fun OnboardingGuideDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(18.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FitnessCenter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Column {
+                    Text(
+                        text = "How RepRise Works",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = "DAILY +1 PROGRESSIVE OVERLOAD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("onboarding_guide_dialog"),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OnboardingStepItem(
+                    stepNumber = "01",
+                    title = "Start at 10 & Add +1 Daily",
+                    body = "Begin with 10 push-ups on Day 1. Every consecutive completed day increases your target by +1 rep (10 → 11 → 12 → 13)."
+                )
+                OnboardingStepItem(
+                    stepNumber = "02",
+                    title = "Log Partial Sets or Complete in Full",
+                    body = "Break your daily target into manageable sets throughout the day, or complete it in a single session before midnight."
+                )
+                OnboardingStepItem(
+                    stepNumber = "03",
+                    title = "Permanent Milestones & Recovery",
+                    body = "If a full day is missed, your active streak resets while your personal best and earned 7d / 30d / 100d badges stay unlocked forever."
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.testTag("dismiss_onboarding_guide_button")
+            ) {
+                Text(
+                    text = "Let's Train",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun OnboardingStepItem(
+    stepNumber: String,
+    title: String,
+    body: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+            ) {
+                Text(
+                    text = stepNumber,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+

@@ -2,6 +2,11 @@ package com.example
 
 import android.app.AlarmManager
 import android.content.Context
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
@@ -11,12 +16,16 @@ import com.example.data.preferences.UserSettings
 import com.example.data.preferences.UserSettingsStore
 import com.example.data.repository.PushUpRepository
 import com.example.domain.ChallengeManager
+import com.example.domain.StreakCalculator
 import com.example.notifications.ReminderScheduler
+import com.example.ui.home.HomeScreen
+import com.example.ui.theme.RepRiseTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,6 +37,9 @@ import java.time.LocalDateTime
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class ExampleRobolectricTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
 
     @Test
     fun `read app_name string from context`() {
@@ -205,7 +217,7 @@ class ExampleRobolectricTest {
         )
         assertEquals(7, snapshot.activeStreak)
         assertEquals(7, snapshot.longestStreak)
-        val stats7 = com.example.domain.StreakCalculator.calculateStats(startDate.plusDays(6), repo.getAllDaysSnapshot())
+        val stats7 = StreakCalculator.calculateStats(startDate.plusDays(6), repo.getAllDaysSnapshot())
         assertTrue(stats7.milestones.first { it.thresholdDays == 7 }.isUnlocked)
 
         // Now simulate a missed day (Day 8: 2026-05-08). App is opened on Day 9 (2026-05-09)
@@ -221,9 +233,100 @@ class ExampleRobolectricTest {
         assertEquals(7, snapshot.longestStreak)
 
         // 7-day milestone remains permanently unlocked
-        val statsDay9 = com.example.domain.StreakCalculator.calculateStats(day9, repo.getAllDaysSnapshot())
+        val statsDay9 = StreakCalculator.calculateStats(day9, repo.getAllDaysSnapshot())
         assertTrue(statsDay9.milestones.first { it.thresholdDays == 7 }.isUnlocked)
 
         db.close()
+    }
+
+    @Test
+    fun `Robolectric - CSV backup export and restore round-trip preserves history and ignores malformed lines`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        val store = UserSettingsStore(context)
+        val repo = PushUpRepository(db.pushUpDayDao(), store)
+
+        val startDate = LocalDate.of(2026, 6, 1)
+        for (i in 0 until 7) {
+            val date = startDate.plusDays(i.toLong())
+            repo.completeChallengeForDate(
+                date = date,
+                targetReps = 10 + i,
+                actualReps = 10 + i,
+                completedAtMillis = 1700000000000L + i * 1000L
+            )
+        }
+
+        val exportedCsv = repo.buildCsvExport(repo.getAllDaysSnapshot())
+        repo.clearAllHistory()
+        assertTrue(repo.getAllDaysSnapshot().isEmpty())
+
+        // Append a malformed line to ensure defensive validation ignores invalid rows
+        val csvWithInvalidLine = exportedCsv + "\ninvalid_date,abc,true,10,123\n"
+        val importedCount = repo.importCsvHistory(csvWithInvalidLine)
+        assertEquals(7, importedCount)
+
+        val restoredStats = StreakCalculator.calculateStats(startDate.plusDays(6), repo.getAllDaysSnapshot())
+        assertEquals(7, restoredStats.activeStreak)
+        assertEquals(7, restoredStats.longestStreak)
+        assertEquals(91, restoredStats.totalLoggedPushUps)
+        assertTrue(restoredStats.milestones.first { it.thresholdDays == 7 }.isUnlocked)
+
+        db.close()
+    }
+
+    @Test
+    fun `Compose UI CUJ - HomeScreen renders dashboard, milestones, onboarding dialog, and completion dialog`() {
+        val today = LocalDate.of(2026, 11, 11)
+        val snapshot = ChallengeManager.evaluateDashboard(
+            now = today.atTime(18, 0),
+            history = emptyList(),
+            settings = UserSettings()
+        )
+        var completedRepsSubmitted: Int? = -1
+
+        composeTestRule.setContent {
+            RepRiseTheme(themeMode = AppThemeMode.DARK) {
+                HomeScreen(
+                    snapshot = snapshot,
+                    hapticEnabled = false,
+                    canUndoToday = false,
+                    notificationsEnabledInSettings = false,
+                    hasNotificationPermission = true,
+                    onMarkComplete = { reps -> completedRepsSubmitted = reps },
+                    onSavePartialProgress = {},
+                    onUndoToday = {},
+                    onOpenNotificationSettings = {}
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // 1. Verify Dashboard, Milestones, and Hero Challenge Card are displayed
+        composeTestRule.onNodeWithTag("home_compact_dashboard_card").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("dashboard_milestones_section").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("milestone_badge_7").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("milestone_badge_30").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("milestone_badge_100").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("hero_target_card").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("today_target_text").performScrollTo().assertIsDisplayed()
+
+        // 2. Open and dismiss Onboarding Guide Dialog
+        composeTestRule.onNodeWithTag("home_onboarding_button").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("onboarding_guide_dialog").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("dismiss_onboarding_guide_button").performClick()
+        composeTestRule.waitForIdle()
+
+        // 3. Open Complete Challenge Dialog and confirm default completion
+        composeTestRule.onNodeWithTag("mark_done_button").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("confirm_done_button").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(null, completedRepsSubmitted)
     }
 }

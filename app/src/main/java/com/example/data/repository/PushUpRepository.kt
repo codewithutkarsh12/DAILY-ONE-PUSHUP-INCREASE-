@@ -86,4 +86,49 @@ class PushUpRepository(
         }
         return sb.toString()
     }
+
+    /**
+     * Parses and restores workout history from a RepRise CSV backup.
+     * Validates each row (ISO-8601 date, positive target, valid completion state) and merges into Room.
+     * Returns the number of valid records imported.
+     */
+    suspend fun importCsvHistory(csvContent: String): Int {
+        var importedCount = 0
+        val lines = csvContent.lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
+
+        for (line in lines) {
+            if (line.startsWith("local_date", ignoreCase = true)) continue
+            val parts = line.split(",")
+            if (parts.size < 3) continue
+
+            val parsedDate = runCatching { LocalDate.parse(parts[0].trim()) }.getOrNull() ?: continue
+            val targetReps = parts[1].trim().toIntOrNull()?.takeIf { it in 1..10000 } ?: continue
+            val isCompleted = parts[2].trim().toBooleanStrictOrNull() ?: continue
+            val actualReps = parts.getOrNull(3)?.trim()?.takeIf { it.isNotEmpty() }?.toIntOrNull()
+                ?.coerceIn(0, 10000)
+            val completedAt = parts.getOrNull(4)?.trim()?.takeIf { it.isNotEmpty() }?.toLongOrNull()
+
+            val existing = dao.getDayByDate(parsedDate.toString())
+            val resolvedActual = when {
+                isCompleted && (actualReps == null || actualReps < targetReps) -> targetReps
+                else -> actualReps
+            }
+
+            dao.upsertDay(
+                PushUpDayEntity(
+                    id = existing?.id ?: 0L,
+                    localDate = parsedDate.toString(),
+                    targetReps = targetReps,
+                    isCompleted = isCompleted,
+                    actualReps = resolvedActual,
+                    completedAtEpochMillis = if (isCompleted) (completedAt ?: System.currentTimeMillis()) else null
+                )
+            )
+            importedCount++
+        }
+        return importedCount
+    }
 }

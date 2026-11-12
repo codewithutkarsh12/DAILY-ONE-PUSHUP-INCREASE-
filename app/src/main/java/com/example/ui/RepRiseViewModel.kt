@@ -277,6 +277,21 @@ class RepRiseViewModel(
         return repository.buildCsvExport(uiState.value.history)
     }
 
+    fun importCsvContent(csvContent: String, onResult: (Int) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val count = repository.importCsvHistory(csvContent)
+                if (count == 0) {
+                    errorFlow.value = "No valid workout records found in the selected CSV file."
+                }
+                onResult(count)
+            } catch (e: Exception) {
+                errorFlow.value = "Failed to import CSV backup: ${e.localizedMessage ?: "Invalid format"}"
+                onResult(0)
+            }
+        }
+    }
+
     fun dismissError() {
         errorFlow.value = null
     }

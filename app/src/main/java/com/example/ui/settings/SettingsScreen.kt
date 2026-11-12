@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -104,6 +105,7 @@ fun SettingsScreen(
     onUpdateTheme: (AppThemeMode) -> Unit,
     onUpdateHaptic: (Boolean) -> Unit,
     onExportCsv: () -> Unit,
+    onImportCsv: () -> Unit = {},
     onClearAllData: () -> Unit,
     onNavigateHome: () -> Unit,
     modifier: Modifier = Modifier
@@ -770,6 +772,22 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.export_csv_cta),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = onImportCsv,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("import_csv_button")
+                    ) {
+                        Icon(imageVector = Icons.Default.Upload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Import / Restore CSV Backup",
                             fontWeight = FontWeight.SemiBold
                         )
                     }

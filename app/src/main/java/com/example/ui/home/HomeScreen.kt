@@ -77,7 +77,9 @@ import com.example.ui.components.AnimatedAthleticProgressRing
 import com.example.ui.components.CompactDashboardCard
 import com.example.ui.components.CompleteChallengeDialog
 import com.example.ui.components.CompletionCelebration
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import com.example.ui.components.NotificationPermissionBanner
+import com.example.ui.components.OnboardingGuideDialog
 import com.example.ui.components.PrimaryActionButton
 import com.example.ui.components.SafetyAndSelfReportNote
 import com.example.ui.theme.AmberWarning
@@ -106,6 +108,7 @@ fun HomeScreen(
 ) {
     val view = LocalView.current
     var showCompleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showOnboardingDialog by rememberSaveable { mutableStateOf(false) }
 
     // Subtle card entrance motion
     var entered by remember { mutableStateOf(false) }
@@ -244,17 +247,31 @@ fun HomeScreen(
                     }
                 }
 
-                IconButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("home_header_settings_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = stringResource(R.string.nav_settings),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { showOnboardingDialog = true },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("home_onboarding_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = "How RepRise Works",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("home_header_settings_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.nav_settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -653,6 +670,12 @@ fun HomeScreen(
                 }
                 onSavePartialProgress(partialReps)
             }
+        )
+    }
+
+    if (showOnboardingDialog) {
+        OnboardingGuideDialog(
+            onDismiss = { showOnboardingDialog = false }
         )
     }
 }

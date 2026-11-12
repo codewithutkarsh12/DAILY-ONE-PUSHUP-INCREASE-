@@ -97,7 +97,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val coachUiState by coachViewModel.uiState.collectAsStateWithLifecycle()
-            var selectedTab by rememberSaveable { mutableStateOf(BottomNavTab.HOME) }
+            var selectedTab by rememberSaveable {
+                mutableStateOf(resolveDeepLinkTab(intent) ?: BottomNavTab.HOME)
+            }
             var hasNotifPermission by remember {
                 mutableStateOf(ReminderScheduler.hasNotificationPermission(this))
             }
@@ -123,6 +125,30 @@ class MainActivity : ComponentActivity() {
                         Toast.makeText(this, "CSV exported successfully.", Toast.LENGTH_SHORT).show()
                     }.onFailure {
                         Toast.makeText(this, "Failed to export CSV.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            // SAF OpenDocument launcher for zero-permission local CSV backup restore
+            val csvImportLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
+            ) { uri: Uri? ->
+                if (uri != null) {
+                    runCatching {
+                        val csvText = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use {
+                            it.readText()
+                        }.orEmpty()
+                        viewModel.importCsvContent(csvText) { importedCount ->
+                            if (importedCount > 0) {
+                                Toast.makeText(
+                                    this,
+                                    "Restored $importedCount workout records.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }.onFailure {
+                        Toast.makeText(this, "Failed to read CSV file.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -347,6 +373,9 @@ class MainActivity : ComponentActivity() {
                                     onExportCsv = {
                                         csvExportLauncher.launch("reprise_history_${LocalDate.now()}.csv")
                                     },
+                                    onImportCsv = {
+                                        csvImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*"))
+                                    },
                                     onClearAllData = { viewModel.clearAllData() },
                                     onNavigateHome = { selectedTab = BottomNavTab.HOME }
                                 )
@@ -355,6 +384,18 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun resolveDeepLinkTab(intent: Intent?): BottomNavTab? {
+        val data = intent?.data ?: return null
+        if (data.scheme != "reprise") return null
+        return when (data.host?.lowercase()) {
+            "home", "challenge" -> BottomNavTab.HOME
+            "coach" -> BottomNavTab.COACH
+            "history" -> BottomNavTab.HISTORY
+            "settings" -> BottomNavTab.SETTINGS
+            else -> BottomNavTab.HOME
         }
     }
 
